@@ -1,27 +1,28 @@
 addpath(genpath('.'));	% Make sure all folders and subfolders are added to the path
 cdToThisScriptsDirectory();	% Change directory to the folder containing this script
-DATA_FOLDER = '../TotalCapture';
-FIGURE_FOLDER = '../Paper';
+DATA_FOLDER = 's1_acting';
+FIGURE_FOLDER = DATA_FOLDER;%'../Paper';
 bodyPartToJointsAssoc = cell2struct([{'Head', 'nose','neck', -1}; {'Sternum', 'rShoulder','lShoulder', 0.5}; {'Pelvis', 'rHip','lHip', 0.5}; {'L_UpArm', 'lShoulder','lElbow', 0.4}; {'R_UpArm', 'rShoulder','rElbow', 0.4}; {'L_LowArm', 'lElbow','lWrist', 0.8}; {'R_LowArm', 'rElbow','rWrist', 0.8}; {'L_UpLeg', 'lHip','lKnee', 0.5}; {'R_UpLeg', 'rHip','rKnee', 0.5}; {'L_LowLeg', 'lKnee','lAnkle', 0.5}; {'R_LowLeg', 'rKnee','rAnkle', 0.5}; {'L_Foot', 'lAnkle','lSmallToe', 0.5}; {'R_Foot', 'rAnkle','rSmallToe', 0.5}], {'bodyPart', 'joint1', 'joint2', 'alpha'}, 2);
 lgndActivities = {' Acting', ' Freestyle', ' RoM', ' Walking'};
 lgndMethods = {'IDIoT', '3D accel matching', '3D orientation matching'};
 methodNames = {'IDIoT', 'baseline3Daccel', 'baseline3Dori'};
-jointsToConsider = [4,5,6,7,8,9,10,11];
+nLimbs = length(bodyPartToJointsAssoc);
+jointsToConsider =1:13%[4,5,6,7,8,9,10,11];
 bwIntensity = [0.25, 0.75];
 baseColor = 1.5.*[0 0.4470 0.7410];
-
+folderPrefix = 's1_acting';
 %% Plot figure 10: device location vs accuracy, different tW (repeat for each activity type)
 activities = {'acting', 'freestyle', 'rom', 'walking'};
 avgAccuracy = cell(length(activities), 3);
 meanAvgAccuracy = zeros(size(avgAccuracy)); stdAvgAccuracy = zeros(size(avgAccuracy));
 iCam = 1;
 iMethod = 1;
-subjects = 1:5;
-for iActivity = 1:length(activities)
-	for iActivityNum = 1:3
+subjects = 1%:5;
+for iActivity = 1%:length(activities)
+	for iActivityNum = 1%:3
 		activity = [activities{iActivity} num2str(iActivityNum)];
 		for iSubj = subjects
-			folderPrefix = [DATA_FOLDER '/s' num2str(iSubj)];  % Folder where all the data for subject s_i is
+			%folderPrefix = [DATA_FOLDER '/s' num2str(iSubj)];  % Folder where all the data for subject s_i is
 			activityProcessedFile = [folderPrefix '/' activity '_processed.mat'];
 			if exist(activityProcessedFile, 'file')~=2  % Make sure dataset has been preprocessed
 				fprintf('Couldn''t find file %s for subject s%d\n', activityProcessedFile, iSubj);
@@ -33,7 +34,10 @@ for iActivity = 1:length(activities)
 			for iTw = 1:length(processed)
 				matrices = processed(iTw).scores{iCam,iMethod};
 				for iMat = 1:length(matrices)
-					a = assignDetectionsToTracks(matrices{iMat}(jointsToConsider, ismember((1+mod((1:size(matrices{iMat},2))-1, 13)), jointsToConsider)), max(matrices{iMat}(:))+1);
+                    single_person = matrices{iMat}(1:nLimbs,1:nLimbs);
+                    assignment_scores = single_person(jointsToConsider, jointsToConsider);
+					%a = assignDetectionsToTracks(matrices{iMat}(jointsToConsider, ismember((1+mod((1:size(matrices{iMat},2))-1, 13)), jointsToConsider)), max(matrices{iMat}(:))+1);
+					a = assignDetectionsToTracks(matrices{iMat}, max(matrices{iMat}(:))+1);
 					assignedCamBodyPart = zeros(1,length(a)); assignedCamBodyPart(a(:,1))=a(:,2);
 					correct = (1+mod(assignedCamBodyPart-1, length(assignedCamBodyPart)) == 1:length(assignedCamBodyPart));
 					avgAccuracy{iActivity,iTw}(end+1) = mean(correct);
@@ -71,12 +75,12 @@ if false
 	assignmentsProcessed = struct('activity',activities, 'correctGuesses',{cell(length(bodyPartToJointsAssoc),3)}, 'meanCorrectGuesses',zeros(length(bodyPartToJointsAssoc),3), 'stdCorrectGuesses',zeros(length(bodyPartToJointsAssoc),3));
 	iCam = 1;
 	iMethod = 1;
-	subjects = 1:5;
+	%subjects = 1:5;
 	for iActivity = 1:length(activities)
 		for iActivityNum = 1:3
 			activity = [activities{iActivity} num2str(iActivityNum)];
 			for iSubj = subjects
-				folderPrefix = [DATA_FOLDER '/s' num2str(iSubj)];  % Folder where all the data for subject s_i is
+				%folderPrefix = [DATA_FOLDER '/s' num2str(iSubj)];  % Folder where all the data for subject s_i is
 				activityProcessedFile = [folderPrefix '/' activity '_processed.mat'];
 				if exist(activityProcessedFile, 'file')~=2  % Make sure dataset has been preprocessed
 					fprintf('Couldn''t find file %s for subject s%d\n', activityProcessedFile, iSubj);
@@ -122,12 +126,12 @@ activities = {'acting', 'freestyle', 'rom', 'walking'};
 assignmentsProcessed = struct('activity',activities, 'correctGuesses',{cell(length(bodyPartToJointsAssoc),3)}, 'meanCorrectGuesses',zeros(length(bodyPartToJointsAssoc),3), 'stdCorrectGuesses',zeros(length(bodyPartToJointsAssoc),3));
 iCam = 1;
 iTw = 1;
-subjects = 1:5;
-for iActivity = 1:length(activities)
-	for iActivityNum = 1:3
+subjects = 1%:5;
+for iActivity = 1%:length(activities)
+	for iActivityNum = 1%:3
 		activity = [activities{iActivity} num2str(iActivityNum)];
 		for iSubj = subjects
-			folderPrefix = [DATA_FOLDER '/s' num2str(iSubj)];  % Folder where all the data for subject s_i is
+			%folderPrefix = [DATA_FOLDER '/s' num2str(iSubj)];  % Folder where all the data for subject s_i is
 			activityProcessedFile = [folderPrefix '/' activity '_processed.mat'];
 			if exist(activityProcessedFile, 'file')~=2  % Make sure dataset has been preprocessed
 				fprintf('Couldn''t find file %s for subject s%d\n', activityProcessedFile, iSubj);
@@ -173,12 +177,12 @@ avgAccuracy = cell(length(activities), length(methods));
 meanAvgAccuracy = zeros(size(avgAccuracy)); stdAvgAccuracy = zeros(size(avgAccuracy));
 iCam = 1;
 iTw = 1;
-subjects = 1:5;
+%subjects = 1:5;
 for iActivity = 1:length(activities)
 	for iActivityNum = 1:3
 		activity = [activities{iActivity} num2str(iActivityNum)];
 		for iSubj = subjects
-			folderPrefix = [DATA_FOLDER '/s' num2str(iSubj)];  % Folder where all the data for subject s_i is
+			%folderPrefix =[DATA_FOLDER '/s' num2str(iSubj)];  % Folder where all the data for subject s_i is
 			activityProcessedFile = [folderPrefix '/' activity '_processed.mat'];
 			if exist(activityProcessedFile, 'file')~=2  % Make sure dataset has been preprocessed
 				fprintf('Couldn''t find file %s for subject s%d\n', activityProcessedFile, iSubj);
@@ -235,7 +239,7 @@ if false
 		for iActivityNum = 1:3
 			activity = [activities{iActivity} num2str(iActivityNum)];
 			for iSubj = subjects
-				folderPrefix = [DATA_FOLDER '/s' num2str(iSubj)];  % Folder where all the data for subject s_i is
+				%folderPrefix = [DATA_FOLDER '/s' num2str(iSubj)];  % Folder where all the data for subject s_i is
 				activityProcessedFile = [folderPrefix '/' activity '_processed.mat'];
 				if exist(activityProcessedFile, 'file')~=2  % Make sure dataset has been preprocessed
 					fprintf('Couldn''t find file %s for subject s%d\n', activityProcessedFile, iSubj);
@@ -275,8 +279,8 @@ if false
 end
 
 %% Plot figure 12: subject ID vs avg accuracy, different activity types (repeat for each method)
-activities = {'acting', 'freestyle', 'rom', 'walking'};
-subjects = 1:5;
+activities = {'acting', 'freestyle', 'rom', 'walking'};%%%
+%subjects = 1:5;
 methods = 1:3;
 avgAccuracy = cell(length(subjects), length(activities));
 totalAvgAccuracy = cell(length(methods));
@@ -289,7 +293,7 @@ for iMethod = methods
 		for iActivityNum = 1:3
 			activity = [activities{iActivity} num2str(iActivityNum)];
 			for iSubj = subjects
-				folderPrefix = [DATA_FOLDER '/s' num2str(iSubj)];  % Folder where all the data for subject s_i is
+				%folderPrefix = [DATA_FOLDER '/s' num2str(iSubj)];  % Folder where all the data for subject s_i is
 				activityProcessedFile = [folderPrefix '/' activity '_processed.mat'];
 				if exist(activityProcessedFile, 'file')~=2  % Make sure dataset has been preprocessed
 					%fprintf('Couldn''t find file %s for subject s%d\n', activityProcessedFile, iSubj);
@@ -335,7 +339,7 @@ cams = 1:8;
 assignmentsProcessed = struct('activity',{activities}, 'correctGuesses',{cell(length(cams),length(activities))}, 'meanCorrectGuesses',zeros(length(cams),length(activities)), 'stdCorrectGuesses',zeros(length(cams),length(activities)));
 for iActivity = 1:length(activities)
 	activity = [activities{iActivity} num2str(iActivityNum)];
-	folderPrefix = [DATA_FOLDER '/s' num2str(iSubj)];  % Folder where all the data for subject s_i is
+	%folderPrefix = [DATA_FOLDER '/s' num2str(iSubj)];  % Folder where all the data for subject s_i is
 	activityProcessedFile = [folderPrefix '/' activity '_processed.mat'];
 	if exist(activityProcessedFile, 'file')~=2  % Make sure dataset has been preprocessed
 		fprintf('Couldn''t find file %s for subject s%d\n', activityProcessedFile, iSubj);
@@ -374,8 +378,8 @@ saveas(h, [FIGURE_FOLDER '/camIDVsAvgAccuracy_activityComparison.eps'], 'epsc');
 return;
 
 %% Load h5 files and process each person's joint positions from camera and IMU orientation
-for iSubj = 1:5
-	folderPrefix = [DATA_FOLDER '/s' num2str(iSubj)];  % Folder where all the data for subject s_i is
+for iSubj = 1%:5
+	%folderPrefix = [DATA_FOLDER '/s' num2str(iSubj)];  % Folder where all the data for subject s_i is
 	activities = {'acting1', 'acting2', 'acting3', 'freestyle1', 'freestyle2', 'freestyle3', 'rom1', 'rom2', 'rom3', 'walking1', 'walking2', 'walking3'};
 	for iActivity = 1:length(activities)
 		activity = activities{iActivity};
@@ -427,8 +431,8 @@ return;
 %% Plot example confusion matrices
 legendStr = {'IDIoT', '3D accel matching', '3D orientation matching'};
 outputFigFilenames = {'confusionIDIoT', 'confusion3Daccel', 'confusion3Dorient'};
-for activity = {'rom1', 'walking1', 'acting1', 'freestyle1'}
-	load([DATA_FOLDER '/s1/' activity{:} '_processed.mat']);
+for activity = {'acting1','rom1', 'walking1', 'freestyle1'}
+	load([folderPrefix '/' activity{:} '_processed.mat']);
 	windowLengths = 5:5:30;
 	personID = 1;
 	bodyPartToJointsAssocInds = 4:7;  % {'L_UpArm', 'R_UpArm', 'L_LowArm', 'R_LowArm'}
